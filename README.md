@@ -35,6 +35,8 @@ Open <http://127.0.0.1:8765>. The service runs as `LocalSystem` with delayed aut
 
 The installer parameters are `InstallDirectory`, `DataDirectory`, `Port`, `ServiceName`, and `StartService`. Re-run installation only after uninstalling the existing service.
 
+The extracted `wwwroot` directory must remain beside `install.ps1`; it contains the local dashboard assets installed with the service.
+
 ```powershell
 .\restart.ps1
 .\uninstall.ps1             # preserves configuration and data

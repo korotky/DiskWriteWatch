@@ -33,6 +33,18 @@ $programDataDirectory = Join-Path $env:ProgramData 'DiskWriteWatch'
 $configPath = Join-Path $programDataDirectory 'config.json'
 New-Item -ItemType Directory -Force -Path $InstallDirectory, $programDataDirectory, $DataDirectory | Out-Null
 Copy-Item -LiteralPath $sourceExe -Destination (Join-Path $InstallDirectory 'DiskWriteWatch.exe') -Force
+$sourceDirectory = Split-Path $sourceExe -Parent
+foreach ($asset in @('appsettings.json', 'DiskWriteWatch.staticwebassets.endpoints.json')) {
+    $sourceAsset = Join-Path $sourceDirectory $asset
+    if (Test-Path -LiteralPath $sourceAsset) {
+        Copy-Item -LiteralPath $sourceAsset -Destination (Join-Path $InstallDirectory $asset) -Force
+    }
+}
+$sourceWebRoot = Join-Path $sourceDirectory 'wwwroot'
+if (-not (Test-Path -LiteralPath (Join-Path $sourceWebRoot 'index.html'))) {
+    throw 'The release payload is incomplete: wwwroot\index.html was not found.'
+}
+Copy-Item -LiteralPath $sourceWebRoot -Destination $InstallDirectory -Recurse -Force
 
 $sample = Join-Path (Split-Path $PSScriptRoot -Parent) 'config.sample.json'
 if (-not (Test-Path -LiteralPath $sample)) { $sample = Join-Path $PSScriptRoot 'config.sample.json' }
