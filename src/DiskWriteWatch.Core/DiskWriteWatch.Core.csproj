@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Core aggregation and configuration library for DiskWriteWatch.</Description>
+  </PropertyGroup>
+</Project>

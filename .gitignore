@@ -1,0 +1,14 @@
+bin/
+obj/
+.vs/
+.idea/
+TestResults/
+artifacts/
+publish/
+*.user
+*.suo
+*.etl
+*.db
+*.db-shm
+*.db-wal
+config.local.json

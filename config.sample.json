@@ -1,0 +1,31 @@
+{
+  "Storage": {
+    "DataDirectory": "%ProgramData%\\DiskWriteWatch\\data",
+    "FlushIntervalSeconds": 300,
+    "MinuteRetentionDays": 30,
+    "HourlyRetentionDays": 365,
+    "MaxDatabaseSizeMb": 5120
+  },
+  "Collection": {
+    "BucketSeconds": 60,
+    "CollectFileIo": true,
+    "CollectDiskIo": true,
+    "MaxKeysPerBucket": 250000,
+    "UnavailableStorageBufferMinutes": 10,
+    "MaxBufferedMemoryMb": 512
+  },
+  "Dashboard": {
+    "ListenUrl": "http://127.0.0.1:8765",
+    "RefreshSeconds": 10
+  },
+  "AnomalyDetection": {
+    "Enabled": true,
+    "AbsoluteMiBPerMinute": 256,
+    "BaselineMinutes": 60,
+    "Multiplier": 5
+  },
+  "Privacy": {
+    "StoreFullPaths": true,
+    "StoreCommandLines": false
+  }
+}

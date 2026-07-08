@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/DiskWriteWatch.Core/DiskWriteWatch.Core.csproj" />
+  <Project Path="src/DiskWriteWatch.Service/DiskWriteWatch.Service.csproj" />
+  <Project Path="tests/DiskWriteWatch.Tests/DiskWriteWatch.Tests.csproj" />
+</Solution>
