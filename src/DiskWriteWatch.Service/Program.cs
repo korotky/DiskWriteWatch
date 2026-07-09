@@ -69,10 +69,11 @@ app.MapGet("/api/health", (MonitorRuntime runtime, SqliteStore store, DiskInvent
 });
 
 app.MapGet("/api/timeline", async (HttpRequest request, MonitorRuntime runtime, SqliteStore store,
+    DiskInventory inventory,
     CancellationToken cancellationToken) =>
 {
     var (from, to) = ParseRange(request);
-    var filter = ParseFilter(request);
+    var filter = ParseFilter(request, inventory);
     var persisted = await store.GetTimelineAsync(from, to, filter, cancellationToken);
     var all = TimelineMerger.Merge(persisted.Concat(runtime.GetLiveBuckets()
             .Where(x => x.StartUnixSeconds >= from && x.StartUnixSeconds <= to)
@@ -92,12 +93,13 @@ app.MapGet("/api/timeline", async (HttpRequest request, MonitorRuntime runtime, 
 });
 
 app.MapGet("/api/top/processes", async (HttpRequest request, MonitorRuntime runtime, SqliteStore store,
+    DiskInventory inventory,
     CancellationToken cancellationToken) =>
 {
     var (from, to) = ParseRange(request);
     var limit = ParseLimit(request);
     var includeMonitor = ParseBool(request.Query["includeMonitor"]);
-    var filter = ParseFilter(request);
+    var filter = ParseFilter(request, inventory);
     var persisted = await store.GetTopProcessesAsync(from, to, limit * 2, includeMonitor, filter, cancellationToken);
     var live = runtime.GetLiveBuckets().Where(x => x.StartUnixSeconds >= from && x.StartUnixSeconds <= to)
         .SelectMany(x => x.FileWrites).Where(filter.MatchesFile)
@@ -108,12 +110,13 @@ app.MapGet("/api/top/processes", async (HttpRequest request, MonitorRuntime runt
 });
 
 app.MapGet("/api/top/paths", async (HttpRequest request, MonitorRuntime runtime, SqliteStore store,
+    DiskInventory inventory,
     CancellationToken cancellationToken) =>
 {
     var (from, to) = ParseRange(request);
     var limit = ParseLimit(request);
     var includeMonitor = ParseBool(request.Query["includeMonitor"]);
-    var filter = ParseFilter(request);
+    var filter = ParseFilter(request, inventory);
     var persisted = await store.GetTopPathsAsync(from, to, limit * 2, includeMonitor, filter, cancellationToken);
     var live = runtime.GetLiveBuckets().Where(x => x.StartUnixSeconds >= from && x.StartUnixSeconds <= to)
         .SelectMany(x => x.FileWrites).Where(filter.MatchesFile)
@@ -124,12 +127,13 @@ app.MapGet("/api/top/paths", async (HttpRequest request, MonitorRuntime runtime,
 });
 
 app.MapGet("/api/top/directories", async (HttpRequest request, MonitorRuntime runtime, SqliteStore store,
+    DiskInventory inventory,
     CancellationToken cancellationToken) =>
 {
     var (from, to) = ParseRange(request);
     var limit = ParseLimit(request);
     var includeMonitor = ParseBool(request.Query["includeMonitor"]);
-    var filter = ParseFilter(request);
+    var filter = ParseFilter(request, inventory);
     var persisted = await store.GetTopDirectoriesAsync(from, to, limit * 2, includeMonitor, filter, cancellationToken);
     var live = runtime.GetLiveBuckets().Where(x => x.StartUnixSeconds >= from && x.StartUnixSeconds <= to)
         .SelectMany(x => x.FileWrites).Where(filter.MatchesFile)
@@ -140,12 +144,13 @@ app.MapGet("/api/top/directories", async (HttpRequest request, MonitorRuntime ru
 });
 
 app.MapGet("/api/top/extensions", async (HttpRequest request, MonitorRuntime runtime, SqliteStore store,
+    DiskInventory inventory,
     CancellationToken cancellationToken) =>
 {
     var (from, to) = ParseRange(request);
     var limit = ParseLimit(request);
     var includeMonitor = ParseBool(request.Query["includeMonitor"]);
-    var filter = ParseFilter(request);
+    var filter = ParseFilter(request, inventory);
     var persisted = await store.GetTopExtensionsAsync(from, to, limit * 2, includeMonitor, filter, cancellationToken);
     var live = runtime.GetLiveBuckets().Where(x => x.StartUnixSeconds >= from && x.StartUnixSeconds <= to)
         .SelectMany(x => x.FileWrites).Where(filter.MatchesFile)
@@ -155,11 +160,11 @@ app.MapGet("/api/top/extensions", async (HttpRequest request, MonitorRuntime run
     return Results.Ok(MergeTop(persisted, live, limit));
 });
 
-app.MapGet("/api/export.csv", async (HttpRequest request, SqliteStore store,
+app.MapGet("/api/export.csv", async (HttpRequest request, SqliteStore store, DiskInventory inventory,
     CancellationToken cancellationToken) =>
 {
     var (from, to) = ParseRange(request);
-    var csv = await store.ExportCsvAsync(from, to, ParseFilter(request), cancellationToken);
+    var csv = await store.ExportCsvAsync(from, to, ParseFilter(request, inventory), cancellationToken);
     return Results.Text(csv, "text/csv; charset=utf-8");
 });
 
@@ -197,11 +202,12 @@ static int ParseLimit(HttpRequest request) =>
 
 static bool ParseBool(string? value) => bool.TryParse(value, out var result) && result;
 
-static QueryFilter ParseFilter(HttpRequest request)
+static QueryFilter ParseFilter(HttpRequest request, DiskInventory inventory)
 {
     int? disk = int.TryParse(request.Query["disk"], out var parsedDisk) && parsedDisk >= 0 ? parsedDisk : null;
+    var diskVolumes = disk.HasValue ? inventory.GetVolumesForDisk(disk.Value) : null;
     return new QueryFilter(request.Query["process"].ToString(), request.Query["path"].ToString(),
-        request.Query["volume"].ToString(), disk);
+        request.Query["volume"].ToString(), disk, diskVolumes);
 }
 
 static IReadOnlyList<TopRow> MergeTop(IEnumerable<TopRow> persisted, IEnumerable<TopRow> live, int limit) =>

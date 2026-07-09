@@ -50,18 +50,26 @@ public sealed record TimelinePoint(
 
 public sealed record TopRow(string Name, long Bytes, long Operations);
 
-public sealed record QueryFilter(string Process = "", string Path = "", string Volume = "", int? Disk = null)
+public sealed record QueryFilter(
+    string Process = "",
+    string Path = "",
+    string Volume = "",
+    int? Disk = null,
+    IReadOnlyList<string>? DiskVolumes = null)
 {
     public bool MatchesFile(FileWriteAggregate row) =>
         Contains(row.Process.Name, Process) && Contains(row.Path, Path) &&
-        (string.IsNullOrWhiteSpace(Volume) || row.Path.StartsWith(Volume.TrimEnd('\\') + "\\",
-            StringComparison.OrdinalIgnoreCase));
+        (string.IsNullOrWhiteSpace(Volume) || StartsWithVolume(row.Path, Volume)) &&
+        (!Disk.HasValue || DiskVolumes?.Any(volume => StartsWithVolume(row.Path, volume)) == true);
 
     public bool MatchesDisk(DiskWriteAggregate row) =>
         Contains(row.Process.Name, Process) && (!Disk.HasValue || row.DiskNumber == Disk.Value);
 
     private static bool Contains(string value, string filter) =>
         string.IsNullOrWhiteSpace(filter) || value.Contains(filter, StringComparison.OrdinalIgnoreCase);
+
+    private static bool StartsWithVolume(string path, string volume) =>
+        path.StartsWith(volume.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase);
 }
 
 internal sealed class MutableCounter

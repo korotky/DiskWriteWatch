@@ -22,4 +22,15 @@ public sealed class FilteringTests
         Assert.True(new QueryFilter(Process: "chrome", Disk: 1).MatchesDisk(row));
         Assert.False(new QueryFilter(Disk: 0).MatchesDisk(row));
     }
+
+    [Fact]
+    public void DiskFilterSelectsLogicalFilesByMappedVolumes()
+    {
+        var eRow = new FileWriteAggregate(Chrome, @"E:\Metrics\monitor.db", @"E:\Metrics", ".db", 10, 1);
+        var cRow = new FileWriteAggregate(Chrome, @"C:\Temp\file.tmp", @"C:\Temp", ".tmp", 10, 1);
+        var filter = new QueryFilter(Disk: 1, DiskVolumes: ["E:"]);
+
+        Assert.True(filter.MatchesFile(eRow));
+        Assert.False(filter.MatchesFile(cRow));
+    }
 }

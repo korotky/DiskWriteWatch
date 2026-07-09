@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 
 namespace DiskWriteWatch.Service;
 
-public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> logger)
+public sealed class SqliteStore(MonitorOptions options, DiskInventory inventory, ILogger<SqliteStore> logger)
 {
     private string DatabasePath => Path.Combine(options.Storage.DataDirectory, "monitor.db");
     private string ConnectionString => new SqliteConnectionStringBuilder
@@ -63,6 +63,7 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
                   AND ($process = '' OR process_name LIKE '%' || $process || '%')
                   AND ($path = '' OR path LIKE '%' || $path || '%')
                   AND ($volume = '' OR path LIKE $volume || '\\%')
+                  AND ($disk < 0 OR ddw_path_matches_volumes(path, $diskVolumes) = 1)
                 UNION ALL
                 SELECT bucket_utc, 0 AS logical_bytes, bytes AS physical_bytes
                 FROM disk_writes WHERE bucket_utc BETWEEN $from AND $to
@@ -74,6 +75,7 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
                   AND ($process = '' OR process_name LIKE '%' || $process || '%')
                   AND ($path = '' OR path LIKE '%' || $path || '%')
                   AND ($volume = '' OR path LIKE $volume || '\\%')
+                  AND ($disk < 0 OR ddw_path_matches_volumes(path, $diskVolumes) = 1)
                 UNION ALL
                 SELECT hour_utc, 0, bytes FROM hourly_disk_writes
                 WHERE hour_utc BETWEEN $from AND $to
@@ -118,6 +120,7 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
               AND ($process = '' OR process_name LIKE '%' || $process || '%')
               AND ($path = '' OR path LIKE '%' || $path || '%')
               AND ($volume = '' OR path LIKE $volume || '\\%')
+              AND ($disk < 0 OR ddw_path_matches_volumes(path, $diskVolumes) = 1)
             ORDER BY bucket_utc, bytes DESC;
             """;
         command.Parameters.AddWithValue("$from", fromUnix);
@@ -200,6 +203,7 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
               AND ($process = '' OR process_name LIKE '%' || $process || '%')
               AND ($path = '' OR path LIKE '%' || $path || '%')
               AND ($volume = '' OR path LIKE $volume || '\\%')
+              AND ($disk < 0 OR ddw_path_matches_volumes(path, $diskVolumes) = 1)
             GROUP BY {column} ORDER BY SUM(bytes) DESC LIMIT $limit;
             """;
         command.Parameters.AddWithValue("$from", fromUnix);
@@ -262,18 +266,21 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
         command.Parameters.AddWithValue("$role", process.Role);
     }
 
-    private static void AddFilterParameters(SqliteCommand command, QueryFilter filter)
+    private void AddFilterParameters(SqliteCommand command, QueryFilter filter)
     {
         command.Parameters.AddWithValue("$process", filter.Process?.Trim() ?? string.Empty);
         command.Parameters.AddWithValue("$path", filter.Path?.Trim() ?? string.Empty);
         command.Parameters.AddWithValue("$volume", filter.Volume?.Trim().TrimEnd('\\') ?? string.Empty);
         command.Parameters.AddWithValue("$disk", filter.Disk ?? -1);
+        command.Parameters.AddWithValue("$diskVolumes", inventory.GetVolumeFilterText(filter.DiskVolumes));
     }
 
     private async Task<SqliteConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
         var connection = new SqliteConnection(ConnectionString);
         await connection.OpenAsync(cancellationToken);
+        connection.CreateFunction("ddw_path_matches_volumes",
+            (string? path, string? volumes) => DiskInventory.PathBelongsToAnyVolume(path, volumes) ? 1 : 0);
         await using var command = connection.CreateCommand();
         command.CommandText = """
             PRAGMA temp_store=MEMORY;

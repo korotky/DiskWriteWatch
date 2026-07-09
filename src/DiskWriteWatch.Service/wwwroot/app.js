@@ -14,6 +14,8 @@ function query(){
 }
 function setFilter(id,value){
   $(id).value=value;
+  if(id==='diskFilter')$('volumeFilter').value='';
+  if(id==='volumeFilter')$('diskFilter').value='';
   load();
 }
 function clearFilters(){
@@ -70,5 +72,11 @@ async function load(){
   clearTimeout(refreshTimer);refreshTimer=setTimeout(load,refreshSeconds*1000);
 }
 $('refresh').onclick=load;$('clearFilters').onclick=clearFilters;$('range').onchange=load;$('includeMonitor').onchange=load;
-for(const id of filterInputs)$(id).onchange=load;
+for(const id of filterInputs){
+  $(id).onchange=()=>{
+    if(id==='diskFilter'&&$(id).value.trim())$('volumeFilter').value='';
+    if(id==='volumeFilter'&&$(id).value.trim())$('diskFilter').value='';
+    load();
+  };
+}
 load();
