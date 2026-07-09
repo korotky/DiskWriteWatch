@@ -19,8 +19,7 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(options.Storage.DataDirectory);
-        await using var connection = new SqliteConnection(ConnectionString);
-        await connection.OpenAsync(cancellationToken);
+        await using var connection = await OpenConnectionAsync(cancellationToken);
         logger.LogInformation("Using SQLite database {DatabasePath}", DatabasePath);
         var command = connection.CreateCommand();
         command.CommandText = Schema;
@@ -31,8 +30,7 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
     {
         if (buckets.Count == 0)
             return;
-        await using var connection = new SqliteConnection(ConnectionString);
-        await connection.OpenAsync(cancellationToken);
+        await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var transaction = connection.BeginTransaction();
         foreach (var bucket in buckets)
         {
@@ -55,8 +53,7 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
         CancellationToken cancellationToken)
     {
         var result = new List<TimelinePoint>();
-        await using var connection = new SqliteConnection(ConnectionString);
-        await connection.OpenAsync(cancellationToken);
+        await using var connection = await OpenConnectionAsync(cancellationToken);
         var command = connection.CreateCommand();
         command.CommandText = """
             SELECT bucket_utc, SUM(logical_bytes), SUM(physical_bytes)
@@ -113,8 +110,7 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
         CancellationToken cancellationToken)
     {
         var output = new StringBuilder("bucket_utc,process,pid,path,bytes,operations\r\n");
-        await using var connection = new SqliteConnection(ConnectionString);
-        await connection.OpenAsync(cancellationToken);
+        await using var connection = await OpenConnectionAsync(cancellationToken);
         var command = connection.CreateCommand();
         command.CommandText = """
             SELECT bucket_utc, process_name, pid, path, bytes, operations
@@ -144,8 +140,7 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
     {
         var minuteCutoff = DateTimeOffset.UtcNow.AddDays(-options.Storage.MinuteRetentionDays).ToUnixTimeSeconds();
         var hourlyCutoff = DateTimeOffset.UtcNow.AddDays(-options.Storage.HourlyRetentionDays).ToUnixTimeSeconds();
-        await using var connection = new SqliteConnection(ConnectionString);
-        await connection.OpenAsync(cancellationToken);
+        await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var transaction = connection.BeginTransaction();
         var command = connection.CreateCommand();
         command.Transaction = transaction;
@@ -191,8 +186,7 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
         if (column is not ("process_name" or "path" or "directory" or "extension"))
             throw new ArgumentOutOfRangeException(nameof(column));
         var result = new List<TopRow>();
-        await using var connection = new SqliteConnection(ConnectionString);
-        await connection.OpenAsync(cancellationToken);
+        await using var connection = await OpenConnectionAsync(cancellationToken);
         var command = connection.CreateCommand();
         command.CommandText = $"""
             SELECT {column}, SUM(bytes), SUM(operations)
@@ -274,6 +268,19 @@ public sealed class SqliteStore(MonitorOptions options, ILogger<SqliteStore> log
         command.Parameters.AddWithValue("$path", filter.Path?.Trim() ?? string.Empty);
         command.Parameters.AddWithValue("$volume", filter.Volume?.Trim().TrimEnd('\\') ?? string.Empty);
         command.Parameters.AddWithValue("$disk", filter.Disk ?? -1);
+    }
+
+    private async Task<SqliteConnection> OpenConnectionAsync(CancellationToken cancellationToken)
+    {
+        var connection = new SqliteConnection(ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            PRAGMA temp_store=MEMORY;
+            PRAGMA cache_size=-65536;
+            """;
+        await command.ExecuteNonQueryAsync(cancellationToken);
+        return connection;
     }
 
     private async Task EnforceMaximumSizeAsync(SqliteConnection connection, CancellationToken cancellationToken)
