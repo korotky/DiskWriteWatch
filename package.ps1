@@ -10,6 +10,7 @@ dotnet publish .\src\DiskWriteWatch.Service\DiskWriteWatch.Service.csproj -c Rel
     -p:Version=$Version -o $stage
 if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed.' }
 
+Get-ChildItem -LiteralPath $stage -Recurse -Filter '*.pdb' | Remove-Item -Force
 Copy-Item .\config.sample.json, .\LICENSE, .\README.md -Destination $stage
 Copy-Item .\packaging\*.ps1 -Destination $stage
 Copy-Item .\docs -Destination $stage -Recurse

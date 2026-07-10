@@ -2,7 +2,7 @@
 param(
     [ValidateRange(0.1, 168)][double]$DurationHours = 24,
     [ValidateRange(10, 3600)][int]$SampleSeconds = 60,
-    [string]$OutputPath = "E:\SystemMetrics\DiskWriteWatch\soak-$((Get-Date).ToString('yyyyMMdd-HHmmss')).csv",
+    [string]$OutputPath = "$env:ProgramData\DiskWriteWatch\soak\soak-$((Get-Date).ToString('yyyyMMdd-HHmmss')).csv",
     [string]$ServiceName = 'DiskWriteWatch'
 )
 $ErrorActionPreference = 'Stop'

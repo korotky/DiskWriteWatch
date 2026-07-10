@@ -8,7 +8,7 @@ DiskWriteWatch — служба Windows 10/11 x64, которая через ker
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
-.\install.ps1 -DataDirectory 'E:\SystemMetrics\DiskWriteWatch'
+.\install.ps1 -DataDirectory 'X:\DiskWriteWatch\data'
 ```
 
 Dashboard будет доступен только локально: <http://127.0.0.1:8765>. Служба `DiskWriteWatch` работает от `LocalSystem` и запускается с задержкой после старта Windows.
@@ -36,6 +36,12 @@ Dashboard будет доступен только локально: <http://127
 - Собственные записи DiskWriteWatch учитываются, но скрыты в топах по умолчанию.
 
 Разница logical/physical нормальна из-за кэшей, компрессии, журналов файловой системы и отложенной записи.
+
+## Приватность
+
+По умолчанию база хранит полные пути файлов, имена процессов, модели и серийные номера дисков. Это удобно для локальной диагностики, но может быть чувствительно в скриншотах и CSV-экспортах. Если полные пути не нужны, установите `Privacy.StoreFullPaths=false`; тогда детализация будет грубее. Command line процессов не сохраняется.
+
+Dashboard не имеет авторизации и должен оставаться только на loopback (`127.0.0.1`/`localhost`). Не публикуйте его в LAN или интернет.
 
 ## Обслуживание
 

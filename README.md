@@ -28,7 +28,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 To put the database on another drive:
 
 ```powershell
-.\install.ps1 -DataDirectory 'E:\SystemMetrics\DiskWriteWatch' -Port 8765
+.\install.ps1 -DataDirectory 'X:\DiskWriteWatch\data' -Port 8765
 ```
 
 Open <http://127.0.0.1:8765>. The service runs as `LocalSystem` with delayed automatic start. Configuration is stored at `%ProgramData%\DiskWriteWatch\config.json`; binaries are installed under `%ProgramFiles%\DiskWriteWatch`.
@@ -53,7 +53,7 @@ Common valid combinations are `60/60`, `60/300`, and `300/300`. The service vali
 DiskWriteWatch.exe --validate-config --config C:\path\to\config.json
 ```
 
-Full paths are stored by default. Set `Privacy.StoreFullPaths` to `false` to aggregate to directories. Command lines are not persisted.
+Full paths are stored by default. Set `Privacy.StoreFullPaths` to `false` to aggregate to directories instead of individual files. Directories, process names, disk models, and disk serial numbers can still be sensitive on shared screenshots or exported CSV files. Command lines are not persisted.
 
 ## API
 
@@ -81,6 +81,7 @@ The release command creates a self-contained ZIP and SHA-256 file under `artifac
 ## Operational notes
 
 - Kernel ETW is system-wide and requires elevation (`LocalSystem` supplies it for the service).
+- The dashboard is intentionally unauthenticated and must stay on loopback. Do not reverse-proxy or bind it to a LAN/public interface.
 - High-cardinality buckets are bounded by `MaxKeysPerBucket`; excess logical writes are retained as `<other>` totals.
 - If the configured data drive disappears, completed buckets remain in the bounded RAM queue. Oldest buckets are dropped when its time or memory limit is reached.
 - Browser caches, page files, compressed files, and filesystem metadata may make physical bytes differ from logical bytes.
