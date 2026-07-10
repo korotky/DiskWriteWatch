@@ -1,8 +1,12 @@
 # DiskWriteWatch
 
+English | [Русский быстрый старт](docs/quickstart.ru.md)
+
 DiskWriteWatch is a lightweight Windows 10/11 x64 service that attributes disk writes to processes and paths using kernel ETW. It needs no filter driver, stores aggregates in SQLite, and serves a private dashboard on `127.0.0.1`.
 
 It is designed for questions such as “what keeps writing to my SSD?”, “is WSL or Docker producing this traffic?”, and “did a tuning change actually reduce writes?”. WSL and Docker writes appear at the Windows host VHDX level because that is where Windows observes them.
+
+> Project status: early public release. The collector and storage format are usable, but the dashboard and packaging are still evolving.
 
 ## Features
 
@@ -78,6 +82,8 @@ Requirements: Windows x64, .NET 10 SDK, Administrator rights only for a live ker
 
 The release command creates a self-contained ZIP and SHA-256 file under `artifacts`. CI builds `master` and pull requests; `v*` tags publish a GitHub Release.
 
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development notes.
+
 ## Operational notes
 
 - Kernel ETW is system-wide and requires elevation (`LocalSystem` supplies it for the service).
@@ -94,6 +100,10 @@ See [`docs/validation.md`](docs/validation.md) for the synthetic writer, shutdow
 ## Limitations
 
 Version 1 targets Windows 10/11 x64. MSI, code signing, ARM64, automatic updates, and guest-level attribution inside WSL/Docker are out of scope.
+
+## Security
+
+Please read [`SECURITY.md`](SECURITY.md). DiskWriteWatch collects local system activity and its dashboard is unauthenticated by design, so keep it bound to loopback only.
 
 ## License
 
