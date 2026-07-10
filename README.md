@@ -8,6 +8,8 @@ It is designed for questions such as “what keeps writing to my SSD?”, “is 
 
 > Project status: early public release. The collector and storage format are usable, but the dashboard and packaging are still evolving.
 
+![DiskWriteWatch dashboard](docs/assets/dashboard.png)
+
 ## Features
 
 - Logical File I/O grouped by process instance, path, directory, and extension.
