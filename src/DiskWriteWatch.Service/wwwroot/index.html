@@ -14,28 +14,38 @@
   </header>
   <main>
     <section class="controls">
-      <label>Range
-        <select id="range">
-          <option value="900">15 minutes</option>
-          <option value="3600" selected>1 hour</option>
-          <option value="86400">24 hours</option>
-          <option value="604800">7 days</option>
-          <option value="2592000">30 days</option>
-          <option value="custom">Custom</option>
-        </select>
-      </label>
-      <label>From <input id="fromTime" type="datetime-local"></label>
-      <label>To <input id="toTime" type="datetime-local"></label>
-      <button id="applyTime" type="button">Apply time</button>
-      <button id="liveRange" type="button">Live range</button>
-      <label>Process <input id="processFilter" type="search" placeholder="chrome"></label>
-      <label>Path <input id="pathFilter" type="search" placeholder="cache or .vhdx"></label>
-      <label>Volume <input id="volumeFilter" type="search" placeholder="C:"></label>
-      <label>Disk <input id="diskFilter" type="number" min="0" placeholder="any"></label>
-      <label><input type="checkbox" id="includeMonitor"> Include monitor overhead</label>
-      <button id="refresh">Refresh</button>
-      <button id="clearFilters" type="button">Clear filters</button>
-      <a id="export" class="button" href="/api/export.csv">Export CSV</a>
+      <div class="control-group">
+        <span class="group-title">Time</span>
+        <label>Range
+          <select id="range">
+            <option value="900">15 minutes</option>
+            <option value="3600" selected>1 hour</option>
+            <option value="86400">24 hours</option>
+            <option value="604800">7 days</option>
+            <option value="2592000">30 days</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+        <label>From <input id="fromTime" type="datetime-local"></label>
+        <label>To <input id="toTime" type="datetime-local"></label>
+        <button id="applyTime" type="button">Apply</button>
+        <button id="resetTime" type="button">Reset time</button>
+      </div>
+      <div class="control-group">
+        <span class="group-title">Filters</span>
+        <label>Process <input id="processFilter" type="search" placeholder="chrome"></label>
+        <label>Path <input id="pathFilter" type="search" placeholder="cache or .vhdx"></label>
+        <label>Volume <input id="volumeFilter" type="search" placeholder="C:"></label>
+        <label>Disk <input id="diskFilter" type="number" min="0" placeholder="any"></label>
+        <label><input type="checkbox" id="includeMonitor"> Include monitor overhead</label>
+        <button id="clearFilters" type="button">Clear filters</button>
+      </div>
+      <div class="control-group actions">
+        <span class="group-title">Actions</span>
+        <button id="refresh">Refresh</button>
+        <button id="resetView" type="button">Reset view</button>
+        <a id="export" class="button" href="/api/export.csv">Export CSV</a>
+      </div>
     </section>
     <section class="cards">
       <article><span>Logical writes</span><strong id="logical">—</strong></article>
@@ -43,7 +53,7 @@
       <article><span>Pending buckets</span><strong id="pending">—</strong></article>
       <article><span>Database</span><strong id="database">—</strong></article>
     </section>
-    <section class="panel"><h2>Write timeline</h2><canvas id="chart" height="250"></canvas><div class="legend"><i class="logical"></i> Logical <i class="physical"></i> Physical <i class="memory"></i> In-memory <span class="hint">Drag on the chart to filter by time.</span></div></section>
+    <section class="panel"><h2>Write timeline</h2><canvas id="chart" height="250"></canvas><div class="legend"><i class="logical"></i> Logical <i class="physical"></i> Physical <i class="memory"></i> In-memory <span class="gap-sample"></span> gap <span class="hint">Drag on the chart to zoom into a time interval.</span></div></section>
     <section class="grid">
       <article class="panel"><h2>Top processes</h2><table id="processes"></table></article>
       <article class="panel"><h2>Top directories</h2><table id="directories"></table></article>
